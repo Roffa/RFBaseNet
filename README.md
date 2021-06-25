@@ -26,6 +26,7 @@ struct ConfigNetDemo: LSConfigNetProtocol{
 ```
 调用
 ```
+var config = ConfigNetDemo()
 LSBaseNet.shared.config = config
 LSBaseNet.shared.post("/sms/send_code", params: ["tel":"18721791941", "type":"5"], success:{ url, result in
     

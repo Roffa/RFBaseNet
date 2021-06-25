@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
 #   * Finally, don't worry about the indent, CocoaPods strips it!
 
   s.description      = <<-DESC
-基于AF 5.4.3,实现网络组件封装。加解密与基础参数集成
+基于AF 5.4.3,实现网络组件封装。加解密与基础参数集成,所有网络化配置遵循LSConfigNetProtocol,专类进行控制，完全解耦实际网络请求代码
                        DESC
 
   s.homepage         = 'https://github.com/Roffa/RFNet'
