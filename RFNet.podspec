@@ -9,7 +9,7 @@
 Pod::Spec.new do |s|
   s.name             = 'RFNet'
   s.version          = '0.1.0'
-  s.summary          = 'A short description of RFNet.'
+  s.summary          = '基于Alamofire网络封装'
 
 # This description is used to generate tags and improve search results.
 #   * Think: What does it do? Why did you write it? What is the focus?
@@ -18,18 +18,18 @@ Pod::Spec.new do |s|
 #   * Finally, don't worry about the indent, CocoaPods strips it!
 
   s.description      = <<-DESC
-TODO: Add long description of the pod here.
+基于AF 5.4.3,实现网络组件封装。加解密与基础参数集成
                        DESC
 
-  s.homepage         = 'https://github.com/zrf/RFNet'
+  s.homepage         = 'https://github.com/Roffa/RFNet'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'zrf' => 'zhourongfeng@021.com' }
-  s.source           = { :git => 'https://github.com/zrf/RFNet.git', :tag => s.version.to_s }
+  s.source           = { :git => 'https://github.com/Roffa/RFNet.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '9.0'
-
+  s.ios.deployment_target = '10.0'
+  s.dependency 'Alamofire'
   s.source_files = 'RFNet/Classes/**/*'
   
   # s.resource_bundles = {
