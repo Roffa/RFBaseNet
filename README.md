@@ -9,6 +9,31 @@
 
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
 
+```
+//配置网络. 加解密等都在专类里面进行配置
+struct ConfigNetDemo: LSConfigNetProtocol{
+    var bEncrypt: Bool = true
+    var baseUrlStr: String? = "http://test-b-passport.sdqcloud.com"
+    var bRetry: Bool = false
+    
+    func customAdapt(_ urlRequest: URLRequest) -> URLRequest{
+        var request = urlRequest
+        request.timeoutInterval = 40
+        return request
+    }
+    
+}
+```
+调用
+```
+LSBaseNet.shared.config = config
+LSBaseNet.shared.post("/sms/send_code", params: ["tel":"18721791941", "type":"5"], success:{ url, result in
+    
+}){ url, result in
+    
+}
+```
+
 ## Requirements
 
 ## Installation
