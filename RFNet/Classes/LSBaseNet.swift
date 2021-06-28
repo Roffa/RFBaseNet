@@ -119,11 +119,12 @@ public struct LSBaseNet {
      @brief 下载文件请求
      @param apiName 接口名， 可以为完整的url地址，非完整url自动拼接baseurlStr
      @param isPost 是否为post请求
+     @param resumeData 断点续传数据， 本地上传已下载的数据. 此参数又值是， 其他非闭包参数无需传值
      @return 返回请求唯一标识, 需要持有请求时使用
      @author rf/2021-06-28
      */
     @discardableResult
-    public mutating func download(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil, isPost:Bool = false, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil, progressClosure: ((Double)->Void)? ) -> String?{
+    public mutating func download(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil, isPost:Bool = false, resumeData:Data? = nil, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil, progressClosure: ((Double)->Void)? ) -> String?{
 //        let destination = DownloadRequest.suggestedDownloadDestination(for: .documentDirectory)
         guard let url = URL(string: url(apiName))  else {
             fatalError("LSBaseNet下载地址异常")
@@ -150,8 +151,13 @@ public struct LSBaseNet {
         do {
             let asUrl = try url.asURL()
             let method: HTTPMethod = isPost ? .post : .get
-            let request = AF.download(asUrl,method:method, parameters:paramsDict, headers:  header(headerDict), to: nil)
-                
+            let request: DownloadRequest
+            if let data = resumeData {
+                request = AF.download(resumingWith: data)
+            }else{
+                request = AF.download(asUrl,method:method, parameters:paramsDict, headers:  header(headerDict), to: nil)
+            }
+            
             request.responseData { response in
                 LSBaseNet.remove(request.id.uuidString) //请求完成，清除请求记录
                 LSBaseNet.downloadFinish(config: cfg, response: response, success: success, failure: failure)
