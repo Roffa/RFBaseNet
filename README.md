@@ -65,7 +65,7 @@ pod 'RFNet'
 
 ## Author
 
-zrf, zhourongfeng@021.com
+zrf, roffa@qq.com
 
 ## License
 
