@@ -9,6 +9,7 @@
 
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
 
+post/get接口默认返回格式为dictionary
 ```
 //配置网络. 加解密等都在此类里进行配置，使用时更轻便
 struct ConfigNetDemo: LSConfigNetProtocol{

@@ -23,7 +23,7 @@ public struct LSBaseNet {
      @discussion
      */
     @discardableResult
-    public mutating func get(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil,success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String?{
+    public mutating func get(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil,resultIsDataType:Bool = false,success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String?{
        // 当带params时， encoder使用URLEncodedFormParameterEncoder.default。经验证，使用JSONParameterEncoder在带参数时请求异常
         return request(url(apiName), method: .get, headers: headers, encoder: URLEncodedFormParameterEncoder.default,
                 success:{ url,result  in
@@ -42,7 +42,7 @@ public struct LSBaseNet {
      @return 返回请求唯一标识, 需要持有请求时使用
      */
     @discardableResult
-    public mutating func post(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String?{
+    public mutating func post(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil, resultIsDataType:Bool = false,success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String?{
         return request(url(apiName), method:.post, params: params, headers:headers, encoder:URLEncodedFormParameterEncoder.default, success:{ url,result  in
             if let succ = success{
                 succ(url, result)
@@ -179,7 +179,7 @@ public struct LSBaseNet {
      @brief 请求
      @discussion 当带params时， encoder使用URLEncodedFormParameterEncoder.default。经验证，使用JSONParameterEncoder在带参数时请求异常
      */
-    fileprivate mutating func request(_ apiName:String, method:HTTPMethod,params:[String: String]? = nil, headers:[String: String]? = nil, encoder: ParameterEncoder, filter:RequestInterceptor? = nil, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String? {
+    fileprivate mutating func request(_ apiName:String, method:HTTPMethod,params:[String: String]? = nil, headers:[String: String]? = nil, encoder: ParameterEncoder, filter:RequestInterceptor? = nil, resultIsDataType:Bool = false,success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String? {
         guard let cfg = config else {
             fatalError("LSBaseNet网络配置未完成，无法使用")
         }
@@ -207,11 +207,21 @@ public struct LSBaseNet {
                 LSBaseNet.remove(request.id.uuidString) //请求完成，清除请求记录
                 LSBaseNet.requestFinish(config: cfg,response: response, success: success, failure: failure)
             }
-        }else{  //返回json
-            request.responseJSON { response in
-                LSBaseNet.remove(request.id.uuidString) //请求完成，清除请求记录
-                LSBaseNet.requestFinish(config: cfg,response: response, success: success, failure: failure)
+        }else{
+            if(resultIsDataType){
+                //返回data
+                request.responseData { response in
+                    LSBaseNet.remove(request.id.uuidString) //请求完成，清除请求记录
+                    LSBaseNet.requestFinish(config: cfg,response: response, success: success, failure: failure)
+                }
+            }else{
+                //返回json
+                request.responseJSON { response in
+                    LSBaseNet.remove(request.id.uuidString) //请求完成，清除请求记录
+                    LSBaseNet.requestFinish(config: cfg,response: response, success: success, failure: failure)
+                }
             }
+            
         }
         LSBaseNet.add(request)
         return request.id.uuidString
@@ -312,6 +322,12 @@ extension LSBaseNet {
                     dict = config.commonDecrypt(encryptStr)
                 }else if let res = result as? Dictionary<String, Any> {
                     dict = res
+                }else if let res = result as? Data{
+                    if let succ = success {
+                        succ(response.request?.url?.absoluteString, res)
+                    }
+                    
+                    return
                 }
                 
                 if let code = dict["code"], code as! Int != 200 {
