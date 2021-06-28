@@ -21,13 +21,13 @@ Pod::Spec.new do |s|
 基于AF 5.4.3,实现网络组件封装。加解密与基础参数集成,所有网络化配置遵循LSConfigNetProtocol,专类进行控制，完全解耦实际网络请求代码
                        DESC
 
-  s.homepage         = 'https://github.com/Roffa/RFNet'
+  s.homepage         = 'https://github.com/Roffa/RFBaseNet'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = { 'zrf' => 'zhourongfeng@021.com' }
-  s.source           = { :git => 'https://github.com/Roffa/RFNet.git', :tag => s.version.to_s }
+  s.author           = { 'zrf' => 'roffa@qq.com' }
+  s.source           = { :git => 'https://github.com/Roffa/RFBaseNet.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
-
+  s.swift_version    = '5.0'
   s.ios.deployment_target = '10.0'
   s.dependency 'Alamofire'
   s.source_files = 'RFNet/Classes/**/*'
