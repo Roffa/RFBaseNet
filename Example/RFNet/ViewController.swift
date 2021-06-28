@@ -50,9 +50,18 @@ class ViewController: UIViewController {
             
         }
         
-
+        NotificationCenter.default.addObserver(self, selector: #selector(networkChanged(_:)), name: .LSNetStatusDidChangeNotification, object: nil)
     }
-
+    @objc func networkChanged(_ notif: Notification) -> Void {
+        
+        if let status = (notif.object as? LSNetworkStatus) {
+            if status == .phone || status == .wifi {
+                print("当前网络状态正常")
+            }else{
+                print("当前网络状态异常")
+            }
+        }
+    }
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.

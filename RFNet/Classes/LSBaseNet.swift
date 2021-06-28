@@ -16,7 +16,7 @@ public struct LSBaseNet {
     public static var requestDict: Dictionary<String, Request> = Dictionary()  //存储网络请求信息
     static let sema = DispatchSemaphore(value: 1)
     
-    private init() {    }
+    private init() {  LSNetworkStatusManager.share.startListening()  }
     /**
      @brief get请求
      @return 返回请求唯一标识, 需要持有请求时使用

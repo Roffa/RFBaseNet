@@ -51,6 +51,21 @@ LSBaseNet.shared.upload("http://api.laravel.com/user/file", files: ["file": "上
     
 }
 ```
+网络状态监控
+```
+NotificationCenter.default.addObserver(self, selector: #selector(networkChanged(_:)), name: .LSNetStatusDidChangeNotification, object: nil)
+
+@objc func networkChanged(_ notif: Notification) -> Void {
+    
+    if let status = (notif.object as? LSNetworkStatus) {
+        if status == .phone || status == .wifi {
+            print("当前网络状态正常")
+        }else{
+            print("当前网络状态异常")
+        }
+    }
+}
+```
 
 ## Requirements
 
