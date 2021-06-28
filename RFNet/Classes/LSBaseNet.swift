@@ -13,14 +13,19 @@ import Alamofire
 public struct LSBaseNet {
     public static var shared = LSBaseNet()
     public var config: LSConfigNetProtocol?
-    private init() {}
+    public static var requestDict: Dictionary<String, Request> = Dictionary()  //存储网络请求信息
+    static let sema = DispatchSemaphore(value: 1)
+    
+    private init() {    }
     /**
      @brief get请求
+     @return 返回请求唯一标识, 需要持有请求时使用
      @discussion
      */
-    public mutating func get(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil,success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil){
+    @discardableResult
+    public mutating func get(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil,success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String?{
        // 当带params时， encoder使用URLEncodedFormParameterEncoder.default。经验证，使用JSONParameterEncoder在带参数时请求异常
-        request(url(apiName), method: .get, headers: headers, encoder: URLEncodedFormParameterEncoder.default,
+        return request(url(apiName), method: .get, headers: headers, encoder: URLEncodedFormParameterEncoder.default,
                 success:{ url,result  in
                     if let succ = success{
                         succ(url, result)
@@ -34,9 +39,11 @@ public struct LSBaseNet {
     }
     /**
      @brief post请求
+     @return 返回请求唯一标识, 需要持有请求时使用
      */
-    public mutating func post(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil){
-        request(url(apiName), method:.post, params: params, headers:headers, encoder:URLEncodedFormParameterEncoder.default, success:{ url,result  in
+    @discardableResult
+    public mutating func post(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String?{
+        return request(url(apiName), method:.post, params: params, headers:headers, encoder:URLEncodedFormParameterEncoder.default, success:{ url,result  in
             if let succ = success{
                 succ(url, result)
             }
@@ -47,15 +54,128 @@ public struct LSBaseNet {
             }
         }
     }
-    
+    /**
+     @brief 上传文件请求
+     @param apiName 接口名， 可以为完整的url地址，非完整url自动拼接baseurlStr
+     @param files 需上传的文件字典   文件名：data
+     @param isPost 是否为post请求
+     @return 返回请求唯一标识, 需要持有请求时使用
+     @author rf/2021-06-28
+     */
+    @discardableResult
+    public mutating func upload(_ apiName:String, files:[String: Data]? = nil, headers:[String: String]? = nil, isGet:Bool = false, mimeType:String?=nil, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil, progressClosure: ((Double)->Void)? ) -> String?{
+//        let destination = DownloadRequest.suggestedDownloadDestination(for: .documentDirectory)
+        guard let url = URL(string: url(apiName))  else {
+            fatalError("LSBaseNet上传地址异常")
+        }
+        guard let cfg = config else {
+            fatalError("LSBaseNet网络配置未完成，无法使用")
+        }
+        guard let files = files, files.count > 0 else {
+            fatalError("LSBaseNet上传文件为空，失败")
+        }
+        //默认Header处理
+        var headerDict = headers
+        if let p = cfg.commonHeaders() {
+            headerDict = headerDict ?? Dictionary()
+            headerDict?.merge(p, uniquingKeysWith: { old, new in
+                return new
+            })
+        }
+        do {
+            let asUrl = try url.asURL()
+            let method: HTTPMethod = !isGet ? .post : .get
+            let request = AF.upload(multipartFormData: { formdata in
+                // 1.参数 parameters
+                if let parameters = cfg.commonParams() {
+                    for p in parameters {
+                        formdata.append(p.value.data(using: .utf8)!, withName: p.key)
+                    }
+                }
+                // 2.数据 datas
+                for (key,value) in files{
+                    formdata.append(value, withName: key, mimeType: mimeType)
+                }
+
+            }, to: asUrl, method:method, headers: header(headerDict))
+                
+            request.responseJSON { response in
+                LSBaseNet.remove(request.id.uuidString) //请求完成，清除请求记录
+                LSBaseNet.requestFinish(config: cfg,response: response, success: success, failure: failure)
+            }
+            request.uploadProgress(queue: .main) { progress in
+                if let pg = progressClosure{
+                    pg(progress.fractionCompleted)
+                }
+            }
+            LSBaseNet.add(request)
+            return request.id.uuidString
+        }catch {
+            
+        }
+        return nil
+    }
+    /**
+     @brief 下载文件请求
+     @param apiName 接口名， 可以为完整的url地址，非完整url自动拼接baseurlStr
+     @param isPost 是否为post请求
+     @return 返回请求唯一标识, 需要持有请求时使用
+     @author rf/2021-06-28
+     */
+    @discardableResult
+    public mutating func download(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil, isPost:Bool = false, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil, progressClosure: ((Double)->Void)? ) -> String?{
+//        let destination = DownloadRequest.suggestedDownloadDestination(for: .documentDirectory)
+        guard let url = URL(string: url(apiName))  else {
+            fatalError("LSBaseNet下载地址异常")
+        }
+        guard let cfg = config else {
+            fatalError("LSBaseNet网络配置未完成，无法使用")
+        }
+        //默认参数处理
+        var paramsDict = params
+        if let p = cfg.commonParams() {
+            paramsDict = paramsDict ?? Dictionary()
+            paramsDict?.merge(p, uniquingKeysWith: { old, new in
+                return new
+            })
+        }
+        //默认Header处理
+        var headerDict = headers
+        if let p = cfg.commonHeaders() {
+            headerDict = headerDict ?? Dictionary()
+            headerDict?.merge(p, uniquingKeysWith: { old, new in
+                return new
+            })
+        }
+        do {
+            let asUrl = try url.asURL()
+            let method: HTTPMethod = isPost ? .post : .get
+            let request = AF.download(asUrl,method:method, parameters:paramsDict, headers:  header(headerDict), to: nil)
+                
+            request.responseData { response in
+                LSBaseNet.remove(request.id.uuidString) //请求完成，清除请求记录
+                LSBaseNet.downloadFinish(config: cfg, response: response, success: success, failure: failure)
+            }
+            request.downloadProgress(queue: .main) { progress in
+                if let pg = progressClosure{
+                    pg(progress.fractionCompleted)
+                }
+            }
+            LSBaseNet.add(request)
+            return request.id.uuidString
+        }catch {
+            
+        }
+        return nil
+    }
     
     /**
      @brief 请求
      @discussion 当带params时， encoder使用URLEncodedFormParameterEncoder.default。经验证，使用JSONParameterEncoder在带参数时请求异常
      */
-    fileprivate mutating func request(_ apiName:String, method:HTTPMethod,params:[String: String]? = nil, headers:[String: String]? = nil, encoder: ParameterEncoder, filter:RequestInterceptor? = nil, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) {
+    fileprivate mutating func request(_ apiName:String, method:HTTPMethod,params:[String: String]? = nil, headers:[String: String]? = nil, encoder: ParameterEncoder, filter:RequestInterceptor? = nil, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String? {
         guard let cfg = config else {
-            fatalError("网络配置未完成，无法使用")
+            fatalError("LSBaseNet网络配置未完成，无法使用")
         }
         //默认参数处理
         var paramsDict = params
@@ -74,65 +194,162 @@ public struct LSBaseNet {
             })
         }
         let paramEncoder = cfg.bEncrypt ? EncryptParameterEncoder(config: cfg) : encoder
+        let request: DataRequest = AF.request(url(apiName), method:method, parameters: paramsDict, encoder: paramEncoder , headers: header(headerDict), interceptor:cfg.bRetry ? CustomRequestInterceptor(config: cfg) : nil, requestModifier: nil)
         //JSONParameterEncoder.default
         if cfg.bEncrypt {  //返回格式定义为字符串
-            AF.request(url(apiName), method:method, parameters: paramsDict, encoder: paramEncoder , headers: header(headerDict), interceptor:cfg.bRetry ? CustomRequestInterceptor(config: cfg) : nil, requestModifier: nil).responseString { response in
-                debugPrint(response)
-                switch response.result {
-                    case .failure(let error):
-                        if let fail = failure {
-                            fail(response.request?.url?.absoluteString, ["code": error.responseCode ?? -1, "msg": error.localizedDescription
-                            ])
-                        }
-                    case .success(let str):
-                        let encryptStr: String = str
-                        let dict:Dictionary = cfg.commonDecrypt(encryptStr)
-                        if let code = dict["code"], code as! Int != 200 {
-                            if let fail = failure {
-                                fail(response.request?.url?.absoluteString, ["code": code , "msg": dict["message"] as! String
-                                ])
-                            }
-                        }else{
-                            if let succ = success {
-                                succ(response.request?.url?.absoluteString, dict["result"] as Any)
-                            }
-                        }
-
-                    return
-                }
+            request.responseString { response in
+                LSBaseNet.remove(request.id.uuidString) //请求完成，清除请求记录
+                LSBaseNet.requestFinish(config: cfg,response: response, success: success, failure: failure)
             }
-        }else{
-            AF.request(url(apiName), method:method, parameters: paramsDict, encoder: paramEncoder , headers: header(headerDict), interceptor:cfg.bRetry ? CustomRequestInterceptor(config: cfg) : nil, requestModifier: nil).responseJSON { response in
-                debugPrint(response)
-                switch response.result {
-                    case .failure(let error):
-                        if let fail = failure {
-                            fail(response.request?.url?.absoluteString, ["code": error.responseCode ?? -1, "msg": error.localizedDescription
-                            ])
-                        }
-                    case .success(let JSON):
-                        let dict: Dictionary<String, Any> = JSON as! Dictionary<String, Any>
-                        if let code = dict["code"], code as! Int != 200 {
-                            if let fail = failure {
-                                fail(response.request?.url?.absoluteString, ["code": code , "msg": dict["message"] as! String
-                                ])
-                            }
-                        }else{
-                            if let succ = success {
-                                succ(response.request?.url?.absoluteString, dict["result"] as Any)
-                            }
-                        }
-
-                    return
-                }
+        }else{  //返回json
+            request.responseJSON { response in
+                LSBaseNet.remove(request.id.uuidString) //请求完成，清除请求记录
+                LSBaseNet.requestFinish(config: cfg,response: response, success: success, failure: failure)
             }
         }
-        
+        LSBaseNet.add(request)
+        return request.id.uuidString
     }
     
 }
+//MARK: 网络请求对象编辑
+extension LSBaseNet{
+    /**
+     @brief 取消所有网络请求.  比如被踢或其他报错，进入登录页同时取消所有可能未完成的请求
+     @author rf/2021-06-28
+     */
+    public func cancelAll(){
+        AF.cancelAllRequests()
+    }
+    /**
+     @brief 根据requestId取消请求
+     @author rf/2021-06-28
+     */
+    public mutating func cancel(_ rid: String){
+        if let request = LSBaseNet.getRequest(rid) {
+            if request.isCancelled {
+                return
+            }
+            request.cancel()
+        }
+    }
+    /**
+     @brief 根据requestId暂停请求
+     @author rf/2021-06-28
+     */
+    public mutating func suspend(_ rid: String){
+        if let request = LSBaseNet.getRequest(rid) {
+            if request.isSuspended {
+                return
+            }
+            request.suspend()
+        }
+    }
+    /**
+     @brief 根据requestId恢复请求
+     @author rf/2021-06-28
+     */
+    public mutating func resume(_ rid: String){
+        if let request = LSBaseNet.getRequest(rid) {
+            if request.isResumed {
+                return
+            }
+            request.resume()
+        }
+    }
+    //根据id获取当前请求
+    fileprivate static func getRequest(_ rid: String) -> Request?{
+        defer {
+            sema.signal()
+        }
+        sema.wait()
+        let request: Request?
+        request = requestDict[rid]
+        return request
+        
+    }
+    //保存当前请求
+    fileprivate static func add(_ request:Request){
+        sema.wait()
+        requestDict.updateValue(request, forKey: request.id.uuidString)
+        sema.signal()
+    }
+    fileprivate static func remove(_ rid: String){
+        defer {
+            sema.signal()
+        }
+        sema.wait()
+        requestDict.removeValue(forKey: rid)
+    }
+}
 //MARK: 网络请求接口传参处理
 extension LSBaseNet {
+    /**
+     @brief 请求结果处理
+     @param response 返回内容。
+     @author rf/2021-06-28
+     */
+    fileprivate static func requestFinish<T>(config: LSConfigNetProtocol,response:AFDataResponse<T>, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) {
+        debugPrint(response)
+        
+        switch response.result {
+            case .failure(let error):
+                if let fail = failure {
+                    fail(response.request?.url?.absoluteString, ["code": error.responseCode ?? -1, "msg": error.localizedDescription
+                    ])
+                }
+            case .success(let result):
+                var dict = [String:Any]()
+                
+                if let res = result as? String { //返回结果为加密字符串处理
+                    let encryptStr: String = res
+                    dict = config.commonDecrypt(encryptStr)
+                }else if let res = result as? Dictionary<String, Any> {
+                    dict = res
+                }
+                
+                if let code = dict["code"], code as! Int != 200 {
+                    if let fail = failure {
+                        fail(response.request?.url?.absoluteString, ["code": code , "msg": dict["message"] as! String
+                        ])
+                    }
+                }else{
+                    if let succ = success {
+                        succ(response.request?.url?.absoluteString, dict["result"] as Any)
+                    }
+                }
+
+            return
+        }
+    }
+    /**
+     @brief 下载结果处理
+     @param response 返回内容。
+     @author rf/2021-06-28
+     */
+    fileprivate static func downloadFinish<T>(config: LSConfigNetProtocol,response:AFDownloadResponse<T>, success:((String?, Data)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) {
+        debugPrint(response)
+        switch response.result {
+            case .failure(let error):
+                if let fail = failure {
+                    fail(response.request?.url?.absoluteString, ["code": error.responseCode ?? -1, "msg": error.localizedDescription
+                    ])
+                }
+            case .success(let result):
+                if let res = result as? Data {
+                    if let succ = success {
+                        succ(response.request?.url?.absoluteString, res)
+                    }
+                }else{
+                    if let fail = failure {
+                        fail(response.request?.url?.absoluteString, ["code": -1 , "msg": "未知错误"
+                        ])
+                    }
+                }
+                
+            return
+        }
+    }
     /**
      @brief 对参数进行处理，转换为HttpHeaders对象
      */

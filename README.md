@@ -10,7 +10,7 @@
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
 
 ```
-//配置网络. 加解密等都在专类里面进行配置
+//配置网络. 加解密等都在此类里进行配置，使用时更轻便
 struct ConfigNetDemo: LSConfigNetProtocol{
     var bEncrypt: Bool = true
     var baseUrlStr: String? = "http://test-b-passport.sdqcloud.com"
@@ -28,9 +28,26 @@ struct ConfigNetDemo: LSConfigNetProtocol{
 ```
 var config = ConfigNetDemo()
 LSBaseNet.shared.config = config
+//post请求
 LSBaseNet.shared.post("/sms/send_code", params: ["tel":"18721791941", "type":"5"], success:{ url, result in
     
 }){ url, result in
+    
+}
+//下载请求
+LSBaseNet.shared.download("https://cdn-office.lanshan.com/office_document_test/teamwork/35ac23ff66a3471e89ed0bb0c242a0ff/D3EEF9364CB643DCBF357698928A817D.docx") { url, result in
+    
+} failure: { url, result in
+    
+} progressClosure: { f in
+    
+}
+//上传文件
+LSBaseNet.shared.upload("http://api.laravel.com/user/file", files: ["file": "上传文件".data(using: .utf8)!]) { url, result in
+    
+} failure: { url, result in
+    
+} progressClosure: { f in
     
 }
 ```

@@ -29,11 +29,28 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         LSBaseNet.shared.config = config
-        LSBaseNet.shared.post("/sms/send_code", params: ["tel":"18721791941", "type":"5"], success:{ url, result in
-            
+        LSBaseNet.shared.post("/sms/send_code", params: ["tel":"1872****941", "type":"5"], success:{ url, result in
+
         }){ url, result in
+
+        }
+        
+        LSBaseNet.shared.download("https://cdn-office.lanshan.com/office_document_test/teamwork/35ac23ff66a3471e89ed0bb0c242a0ff/D3EEF9364CB643DCBF357698928A817D.docx") { url, result in
+            
+        } failure: { url, result in
+            
+        } progressClosure: { f in
             
         }
+        LSBaseNet.shared.upload("http://api.laravel.com/user/file", files: ["file": "上传文件".data(using: .utf8)!]) { url, result in
+            
+        } failure: { url, result in
+            
+        } progressClosure: { f in
+            
+        }
+        
+
     }
 
     override func didReceiveMemoryWarning() {

@@ -7,7 +7,7 @@
 
 import Foundation
 
-
+//MARK: 专属网络配置类
 public protocol LSConfigNetProtocol {
     var baseUrlStr: String? {get set}
     var bRetry:Bool{get set}   //是否开启失败3次重试。 默认关闭
@@ -23,43 +23,12 @@ public protocol LSConfigNetProtocol {
 }
 extension LSConfigNetProtocol{
     public func commonParams() -> [String:String]? {
-        return [
-            "network" : "0",
-            "iosAccid" : "C6A10D0CC92D40F78D408D1742AB9E03",
-            "accid" : "",
-            "projectCode": "scanner",
-            "uuid":"C6A10D0CC92D40F78D408D1742AB9E03",
-            "isAbroad" : "0",
-            "umOid": "27368476ace8cc5be8fdeb632c105219da9a41fb",
-            "devicebrand" : "iPhone",
-            "ts": String(Int(Date().timeIntervalSince1970)),
-            "appver" : "1.4.0",
-            "apptypeid" : "100055",
-            "os": "iOS",
-            "istourist": "0",
-            "obatchid" : "1628d0bccfafa6c0",
-            "timezone" : "8",
-            "deviceid":"5E927A9B-71CD-4C95-9605-27F708D65A35",
-            "osversion" : "14.4.2",
-            "appqid" : "appstore210624",
-            "appverint" : "010400",
-            "country" : "徐汇区",
-            "province" : "上海市",
-            "device" : "iPhone 11",
-            "appcqid" : "appstore",
-            "imei" : "B9C09211-E9A9-4346-A91B-87CD01A4A788",
-            "pixel" : "828*1792",
-            "userinfo" : "{\"usertype\":\"null\",\"sex\":\"null\",\"bd\":\"null\",\"regts\":\"null\",\"lastinstall\":\"1624498054\"}"
-        ]
+        return nil  //默认无公共参数
     }
     public func commonHeaders()->[String:String]?{
-        return [
-            "Content-Type" : "application/x-www-form-urlencoded; charset=utf-8",
-            "deviceId" : "C6A10D0CC92D40F78D408D1742AB9E03",
-            "uuid" : "C6A10D0CC92D40F78D408D1742AB9E03",
-            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpbWdVcmwiOiJodHRwczovL2Nkbi1zY2FubmVyLmxhbnNoYW4uY29tL2hlYWQvZGVmYXVsdC5wbmciLCJwYXNzSWQiOiJmYTBkMjRlNGZlNjI0NTU2OTFjNTdiYjU1NTEzOTE0YSIsIm5hbWUiOiLnlKjmiLcxMzIqKioqODMyOSIsImFjY0lkIjoiMTYzNzg1MTkxMGU1MTYxYjFsdE05cyIsImV4cCI6MTYzMTYxMjIwOCwiaWF0IjoxNjIzODM2MjA4fQ.GrWFrel4smXzdmkg6OTjKfOtKMnnXJhbNSJskfK46D0"
-        ]
+        return nil
     }
+    //加解密后数据。 当bEncrypt=true时需要实现下面两方法
     public func commonEncrypt(_ paramStr: String?)->Data? {
         return nil
     }
