@@ -29,7 +29,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         LSBaseNet.shared.config = config
-        LSBaseNet.shared.post("/sms/send_code", params: ["tel":"1872****941", "type":"5"], success:{ url, result in
+        LSBaseNet.shared.post("/sms/send_code", params: ["tel":"1872****941", "type":5, "test": true], success:{ url, result in
 
         }){ url, result in
 

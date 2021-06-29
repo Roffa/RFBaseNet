@@ -15,14 +15,14 @@ public protocol LSConfigNetProtocol {
     
     func customAdapt(_ urlRequest: URLRequest) -> URLRequest  //bRetry=ture.配置超时、增加header等操作
     
-    //由于Alamofire5以上要求传参必须遵循Encodable协议，此处强制要求传参必须为字符串，否则要实现参数对象来适配Codable协议
-    func commonParams()->[String:String]?  //公共参数配置
+    
+    func commonParams()->[String:Any]?  //公共参数配置
     func commonHeaders()->[String:String]?  //公共Header配置
     func commonEncrypt(_ paramStr: String?)->Data?  //json string参数加密.
     func commonDecrypt(_ result: String?)->[String:Any]  //返回结果解密.
 }
 extension LSConfigNetProtocol{
-    public func commonParams() -> [String:String]? {
+    public func commonParams() -> [String:Any]? {
         return nil  //默认无公共参数
     }
     public func commonHeaders()->[String:String]?{

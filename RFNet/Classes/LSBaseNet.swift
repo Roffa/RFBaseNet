@@ -23,7 +23,7 @@ public struct LSBaseNet {
      @discussion
      */
     @discardableResult
-    public mutating func get(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil,resultIsDataType:Bool = false,success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String?{
+    public mutating func get(_ apiName:String, params:[String: Any]? = nil, headers:[String: String]? = nil,resultIsDataType:Bool = false,success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String?{
        // 当带params时， encoder使用URLEncodedFormParameterEncoder.default。经验证，使用JSONParameterEncoder在带参数时请求异常
         return request(url(apiName), method: .get, headers: headers, encoder: URLEncodedFormParameterEncoder.default,
                 success:{ url,result  in
@@ -42,7 +42,7 @@ public struct LSBaseNet {
      @return 返回请求唯一标识, 需要持有请求时使用
      */
     @discardableResult
-    public mutating func post(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil, resultIsDataType:Bool = false,success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String?{
+    public mutating func post(_ apiName:String, params:[String: Any]? = nil, headers:[String: String]? = nil, resultIsDataType:Bool = false,success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String?{
         return request(url(apiName), method:.post, params: params, headers:headers, encoder:URLEncodedFormParameterEncoder.default, success:{ url,result  in
             if let succ = success{
                 succ(url, result)
@@ -89,7 +89,7 @@ public struct LSBaseNet {
                 // 1.参数 parameters
                 if let parameters = cfg.commonParams() {
                     for p in parameters {
-                        formdata.append(p.value.data(using: .utf8)!, withName: p.key)
+                        formdata.append("\(p.value)".data(using: .utf8)!, withName: p.key)
                     }
                 }
                 // 2.数据 datas
@@ -124,7 +124,7 @@ public struct LSBaseNet {
      @author rf/2021-06-28
      */
     @discardableResult
-    public mutating func download(_ apiName:String, params:[String: String]? = nil, headers:[String: String]? = nil, isPost:Bool = false, resumeData:Data? = nil, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil, progressClosure: ((Double)->Void)? ) -> String?{
+    public mutating func download(_ apiName:String, params:[String: Any]? = nil, headers:[String: String]? = nil, isPost:Bool = false, resumeData:Data? = nil, success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil, progressClosure: ((Double)->Void)? ) -> String?{
 //        let destination = DownloadRequest.suggestedDownloadDestination(for: .documentDirectory)
         guard let url = URL(string: url(apiName))  else {
             fatalError("LSBaseNet下载地址异常")
@@ -132,13 +132,20 @@ public struct LSBaseNet {
         guard let cfg = config else {
             fatalError("LSBaseNet网络配置未完成，无法使用")
         }
-        //默认参数处理
-        var paramsDict = params
+        var paramsDict: [String: String] = [String: String]()
+        if let params = params {
+            for (k, v) in params{
+                paramsDict.updateValue("\(v)", forKey: k)
+            }
+        }
+        
         if let p = cfg.commonParams() {
-            paramsDict = paramsDict ?? Dictionary()
-            paramsDict?.merge(p, uniquingKeysWith: { old, new in
-                return new
-            })
+            for (k, v) in p{
+                paramsDict.updateValue("\(v)", forKey: k)
+            }
+//            paramsDict?.merge(p, uniquingKeysWith: { old, new in
+//                return new
+//            })
         }
         //默认Header处理
         var headerDict = headers
@@ -179,17 +186,25 @@ public struct LSBaseNet {
      @brief 请求
      @discussion 当带params时， encoder使用URLEncodedFormParameterEncoder.default。经验证，使用JSONParameterEncoder在带参数时请求异常
      */
-    fileprivate mutating func request(_ apiName:String, method:HTTPMethod,params:[String: String]? = nil, headers:[String: String]? = nil, encoder: ParameterEncoder, filter:RequestInterceptor? = nil, resultIsDataType:Bool = false,success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String? {
+    fileprivate mutating func request(_ apiName:String, method:HTTPMethod,params:[String: Any]? = nil, headers:[String: String]? = nil, encoder: ParameterEncoder, filter:RequestInterceptor? = nil, resultIsDataType:Bool = false,success:((String?, Any)->Void)?=nil, failure:((String?, Dictionary<String,Any>)->Void)?=nil) -> String? {
         guard let cfg = config else {
             fatalError("LSBaseNet网络配置未完成，无法使用")
         }
         //默认参数处理
-        var paramsDict = params
+        var paramsDict: [String: String] = [String: String]()
+        if let params = params {
+            for (k, v) in params{
+                paramsDict.updateValue("\(v)", forKey: k)
+            }
+        }
+        
         if let p = cfg.commonParams() {
-            paramsDict = paramsDict ?? Dictionary()
-            paramsDict?.merge(p, uniquingKeysWith: { old, new in
-                return new
-            })
+            for (k, v) in p{
+                paramsDict.updateValue("\(v)", forKey: k)
+            }
+//            paramsDict?.merge(p, uniquingKeysWith: { old, new in
+//                return new
+//            })
         }
         //默认Header处理
         var headerDict = headers
