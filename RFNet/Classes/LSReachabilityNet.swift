@@ -8,6 +8,8 @@
 import Foundation
 import Alamofire
 
+
+
 public extension Notification.Name {
     /// 网络状态切换
     static let LSNetStatusDidChangeNotification = Notification.Name("LSNetStatusDidChangeNotification")

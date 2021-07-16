@@ -11,7 +11,7 @@ import RFNet
 
 struct ConfigNetDemo: LSConfigNetProtocol{
     var bEncrypt: Bool = true
-    var baseUrlStr: String? = "http://test-b-passport.sdqcloud.com"
+    var baseUrlStr: String? = "https://test-api2-office.lanshan.com"
     var bRetry: Bool = false
     
     func customAdapt(_ urlRequest: URLRequest) -> URLRequest{
@@ -29,7 +29,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         LSBaseNet.shared.config = config
-        LSBaseNet.shared.post("/sms/send_code", params: ["tel":"1872****941", "type":5, "test": true], success:{ url, result in
+        LSBaseNet.shared.post("/file/list", params: ["uniqueCode": "315BBF99953645189E86604310D5543A", "token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpbWdVcmwiOiJodHRwczovL2Nkbi1zY2FubmVyLmxhbnNoYW4uY29tL2hlYWQvZGVmYXVsdC5wbmciLCJwYXNzSWQiOiJmYTBkMjRlNGZlNjI0NTU2OTFjNTdiYjU1NTEzOTE0YSIsIm5hbWUiOiLnlKjmiLcxMzIqKioqODMyOSIsImFjY0lkIjoiMTYzNzg1MTkxMGU1MTYxYjFsdE05cyIsImV4cCI6MTYzMTYxMjIwOCwiaWF0IjoxNjIzODM2MjA4fQ.GrWFrel4smXzdmkg6OTjKfOtKMnnXJhbNSJskfK46D0"], success:{ url, result in
 
         }){ url, result in
 
